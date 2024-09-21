@@ -1,0 +1,20 @@
+type Person {
+    id: ID
+    name: String
+    paternal: String
+    maternal: String
+    address: String
+    phone: String
+    isDeleted: Boolean
+}
+
+
+type Query {
+    getPersons: [Person]
+    getPerson(id: ID): Person
+}
+
+type Mutation {
+    removePerson(id: ID): Person
+    createPerson(name: String, paternal: String, maternal: String, address: String, phone: String): Person
+}
