@@ -17,4 +17,12 @@ export class CreatePersonDto {
 
     @Matches(/^\d{10}$/, { message: 'El número telefónico debe ser de 10 dígitos sin separadores' })
     phone: string;
+
+    constructor(data: any) {
+        this.name      = data.name;
+        this.paternal  = data.paternal;
+        this.maternal  = data.maternal;
+        this.address   = data.address;
+        this.phone     = data.phone;
+    }
 }

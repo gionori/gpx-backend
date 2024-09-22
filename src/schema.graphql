@@ -9,12 +9,19 @@ type Person {
 }
 
 
+input Pagination {
+    count: Int
+    offset: Int
+}
+
+
 type Query {
-    getPersons: [Person]
+    getPersons(query: String, pagination: Pagination): [Person]
     getPerson(id: ID): Person
 }
 
 type Mutation {
     removePerson(id: ID): Person
     createPerson(name: String, paternal: String, maternal: String, address: String, phone: String): Person
+    updatePerson(name: String, paternal: String, maternal: String, address: String, phone: String, id: ID): Person
 }

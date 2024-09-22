@@ -1,12 +1,32 @@
 
 import { AppDataSource } from '../../config/databases/data-source';
 import { Person } from './entities';
-import { CreatePersonDto } from './dtos';
 import { validate } from 'class-validator';
+import { ILike } from 'typeorm';
 
 
-const find = (): Promise<Person[]> => {
-  return AppDataSource.manager.find(Person);
+import { CreatePersonDto, UpdatePersonDto } from './dtos';
+import { Pagination } from '../core/interfaces/';
+
+
+const find = (query: string = '', pagination: Pagination): Promise<Person[]> => {
+  const take: number = pagination?.count <= 0 ? 50 : pagination?.count;
+  const skip: number = pagination?.offset < 0 ? 0 : pagination?.offset;
+
+  return AppDataSource.manager.find(Person, {
+    where: [
+      { isDeleted: false, name    : ILike(`%${ query }%`) },
+      { isDeleted: false, paternal: ILike(`%${ query }%`) },
+      { isDeleted: false, maternal: ILike(`%${ query }%`) },      
+    ],
+    order: {
+      name: 'ASC',
+      paternal: 'ASC',
+      maternal: 'ASC',
+    },
+    take: take,
+    skip: skip,
+  });
 }
 
 
@@ -45,16 +65,8 @@ const remove = async (id: number): Promise<Person> => {
 
 
 
-const create = async (createPersonDto: CreatePersonDto): Promise<Person|string> => {
-    const errors = await validate(createPersonDto);
-
-    if (errors.length > 0) {
-      const message: string = errors.map(err => Object.values(err.constraints))
-        .flat()
-        .join('\n');
-
-      throw new Error(message);
-    }
+const create = async (createPersonDto: CreatePersonDto): Promise<Person> => {
+    await validateDto(createPersonDto);
         
     const { name, paternal, maternal, address, phone } = createPersonDto;
       
@@ -71,24 +83,62 @@ const create = async (createPersonDto: CreatePersonDto): Promise<Person|string> 
 
 
 
+
+const update = async (updatePersonDto: UpdatePersonDto): Promise<Person> => {
+  await validateDto(updatePersonDto);
+    
+  const person = await findById(updatePersonDto.id);
+  const { name, paternal, maternal, address, phone } = updatePersonDto;
+    
+  person.name     = name.toUpperCase().trim();
+  person.paternal = paternal.toUpperCase().trim();
+  person.maternal = maternal.toUpperCase().trim();
+  person.address  = address.toUpperCase().trim();
+  person.phone    = phone.trim();
+  let data: any = { ...person };
+  delete data.id;
+    
+  await AppDataSource.manager
+    .createQueryBuilder()
+    .update(Person)
+    .set(data)
+    .where("id = :id", { id: person.id })
+    .execute();
+
+  return person;
+}
+
+
+
+const validateDto = async (dto: any) => {
+  const errors = await validate(dto);
+
+  if (errors.length > 0) {
+    const message: string = errors.map(err => Object.values(err.constraints))
+    .flat()
+    .join('\n');
+    
+    throw new Error(message);
+  }
+};
+
+
+
 export const resolvers = {
     Query: {
-      getPersons: () => find(),
+      getPersons: (parent: any, args: any, contextValue: any, info: any) => find(args.query, args.pagination),
       getPerson: (parent: any, args: any, contextValue: any, info: any) => findById(args.id),
     },
     
     Mutation: {
       createPerson: (parent: any, args: any, contextValue: any, info: any) => {
-        const { name, paternal, maternal, address, phone } = args;
-
-        const createPersonDto     = new CreatePersonDto();
-        createPersonDto.name      = name;
-        createPersonDto.paternal  = paternal;
-        createPersonDto.maternal  = maternal;
-        createPersonDto.address   = address;
-        createPersonDto.phone     = phone;
-
+        const createPersonDto = new CreatePersonDto(args);
         return create(createPersonDto);
+      },
+
+      updatePerson: (parent: any, args: any, contextValue: any, info: any) => {        
+        const updatePersonDto = new UpdatePersonDto(args);
+        return update(updatePersonDto);
       },
 
       removePerson: (parent: any, args: any, contextValue: any, info: any) => remove(args.id),
