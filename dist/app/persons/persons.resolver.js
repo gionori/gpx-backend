@@ -6,15 +6,17 @@ const entities_1 = require("./entities");
 const class_validator_1 = require("class-validator");
 const typeorm_1 = require("typeorm");
 const dtos_1 = require("./dtos");
-const find = (query = '', pagination) => {
+const find = async (query = '', pagination) => {
     const take = pagination?.count <= 0 ? 50 : pagination?.count;
     const skip = pagination?.offset < 0 ? 0 : pagination?.offset;
-    return data_source_1.AppDataSource.manager.find(entities_1.Person, {
-        where: [
-            { isDeleted: false, name: (0, typeorm_1.ILike)(`%${query}%`) },
-            { isDeleted: false, paternal: (0, typeorm_1.ILike)(`%${query}%`) },
-            { isDeleted: false, maternal: (0, typeorm_1.ILike)(`%${query}%`) },
-        ],
+    const where = [
+        { isDeleted: false, name: (0, typeorm_1.ILike)(`%${query}%`) },
+        { isDeleted: false, paternal: (0, typeorm_1.ILike)(`%${query}%`) },
+        { isDeleted: false, maternal: (0, typeorm_1.ILike)(`%${query}%`) },
+    ];
+    const count = await data_source_1.AppDataSource.manager.countBy(entities_1.Person, where);
+    const persons = await data_source_1.AppDataSource.manager.find(entities_1.Person, {
+        where: where,
         order: {
             name: 'ASC',
             paternal: 'ASC',
@@ -23,6 +25,7 @@ const find = (query = '', pagination) => {
         take: take,
         skip: skip,
     });
+    return { persons, count };
 };
 const findById = async (id) => {
     if (!id) {

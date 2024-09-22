@@ -15,8 +15,14 @@ input Pagination {
 }
 
 
+type PersonResult {
+    persons: [Person]
+    count: Int
+}
+
+
 type Query {
-    getPersons(query: String, pagination: Pagination): [Person]
+    getPersons(query: String, pagination: Pagination): PersonResult
     getPerson(id: ID): Person
 }
 

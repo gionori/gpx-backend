@@ -5,20 +5,24 @@ import { validate } from 'class-validator';
 import { ILike } from 'typeorm';
 
 
-import { CreatePersonDto, UpdatePersonDto } from './dtos';
+import { CreatePersonDto, PersonsResult, UpdatePersonDto } from './dtos';
 import { Pagination } from '../core/interfaces/';
 
 
-const find = (query: string = '', pagination: Pagination): Promise<Person[]> => {
+const find = async (query: string = '', pagination: Pagination): Promise<PersonsResult> => {
   const take: number = pagination?.count <= 0 ? 50 : pagination?.count;
   const skip: number = pagination?.offset < 0 ? 0 : pagination?.offset;
 
-  return AppDataSource.manager.find(Person, {
-    where: [
-      { isDeleted: false, name    : ILike(`%${ query }%`) },
-      { isDeleted: false, paternal: ILike(`%${ query }%`) },
-      { isDeleted: false, maternal: ILike(`%${ query }%`) },      
-    ],
+  const where = [
+    { isDeleted: false, name    : ILike(`%${ query }%`) },
+    { isDeleted: false, paternal: ILike(`%${ query }%`) },
+    { isDeleted: false, maternal: ILike(`%${ query }%`) },      
+  ];
+
+  const count = await AppDataSource.manager.countBy(Person, where);
+
+  const persons = await AppDataSource.manager.find(Person, {
+    where: where,
     order: {
       name: 'ASC',
       paternal: 'ASC',
@@ -27,6 +31,8 @@ const find = (query: string = '', pagination: Pagination): Promise<Person[]> => 
     take: take,
     skip: skip,
   });
+
+  return { persons, count };
 }
 
 
