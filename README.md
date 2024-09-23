@@ -1,8 +1,9 @@
-# Awesome Project Build with TypeORM
+# Backend para la gestión de personas para el examen GPX
 
-Steps to run this project:
+Pasos para la ejecución:
 
-1. Run `npm i` command
-2. Abrir Docker Desktop y ejecutar docker-compose up -d
-3. Setup database settings inside `data-source.ts` file
-4. Run `npm start` command
+1. Clonar el respositorio
+2. Entrar a la carpeta del proyecto
+3. Ejecutar instrucción `npm install`
+4. Abrir Docker Desktop y ejecutar docker-compose up -d
+4. Ejecutar la instrucción `npm start`
